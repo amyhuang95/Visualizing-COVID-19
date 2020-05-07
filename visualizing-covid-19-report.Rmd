@@ -1,10 +1,23 @@
 ---
 title: "Visualizing COVID-19 Global Pandemic"
+author: "Amy Huang"
+date: "May 7, 2020"
+output:
+  html_document: default
+  css: styles.css
+  df_print: kable
+  highlight: monochrome
+  number_sections: yes
+  code_folding: hide
+  theme: cosmo
+  toc: yes
+  toc_depth: 4
+  toc_float: no
 ---
 
 <style>
 body, h1, h2, h3, h4 {
-    font-family: "Bookman", serif;
+    font-family: "Sans", serif;
 }
 
 body {
@@ -14,7 +27,7 @@ a, a:hover {
     color: blue;
 }
 pre {
-    font-size: 12
+    font-size: 14
     px;
 }
 table{
@@ -34,9 +47,10 @@ This report aims to provide a screenshot of the global trend of COVID-19 pandemi
 
 # Preperations
 ```{r loading_packages, message=FALSE, warning=FALSE}
-#install.packages("tidyverse")
+#install.packages(c("tidyverse","kableExtra"))
 library(tidyverse)
-
+library(knitr)
+library(kableExtra)
 ```
 
 # Background 
@@ -272,7 +286,12 @@ global_confirmed %>%
   knitr::kable(
     col.names = c("Region","Total confirmed cases"), 
     align = "rr", 
-    caption = "Top infected regions")
+    caption = "Top infected regions") %>% 
+  kable_styling(
+    bootstrap_options = "striped", 
+    full_width = F, 
+    position = "center"
+  )
 ```
 
 ## Death rate
@@ -285,7 +304,12 @@ global_deaths %>%
   head(n=10) %>% 
   knitr::kable(col.names = c("Region","Death Toll"), 
                align = "rr",
-               caption = "Top fatality countries")
+               caption = "Top fatality countries") %>% 
+  kable_styling(
+    bootstrap_options = "striped", 
+    full_width = F, 
+    position = "center"
+  )
 
 confirmed_death <- merge(global_confirmed, global_deaths, 
                          by = c("Country.Region", "date"), 
@@ -306,7 +330,12 @@ death %>%
   knitr::kable(
     col.names = c("Region", "Total confirmed cases","Death toll", "Infection fatality rate"), 
     align = "rrrr", 
-    caption = "Top infection fatality rate")
+    caption = "Top infection fatality rate") %>% 
+  kable_styling(
+    bootstrap_options = "striped", 
+    full_width = F, 
+    position = "center"
+  )
 ```
 
 
@@ -333,7 +362,12 @@ recovered %>%
   knitr::kable(
     col.names = c("Region","Total confirmed cases", "Total recovered cases", "Infection recovery rate"), 
     align = "rrrr", 
-    caption = "Top recovered countries")
+    caption = "Top recovered countries") %>% 
+  kable_styling(
+    bootstrap_options = "striped", 
+    full_width = F, 
+    position = "center"
+  )
 ```
 
 
