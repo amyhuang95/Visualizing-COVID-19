@@ -1,0 +1,369 @@
+---
+title: "Visualizing COVID-19 Global Pandemic"
+author: "Amy Huang"
+date: "May 7, 2020"
+output:
+  html_document: default
+  css: styles.css
+  df_print: kable
+  highlight: monochrome
+  html_document: null
+  number_sections: yes
+  code_folding: hide
+  theme: cosmo
+  toc: yes
+  toc_depth: 4
+  toc_float: no
+subtitle: ''
+---
+
+<style>
+body, h1, h2, h3, h4 {
+    font-family: "Bookman", serif;
+}
+
+body {
+    color: #333333;
+}
+a, a:hover {
+    color: blue;
+}
+pre {
+    font-size: 12
+    px;
+}
+table{
+    margin: 1px 5px 1px 5px;
+    border-top: 1px solid #666;
+    border-bottom: 1px solid #666;
+}
+table thead th { border-bottom: 1px solid #ddd; }
+th, td { padding: 5px; }
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This report aims to provide a screenshot of the global trend of COVID-19 pandemic and help readers get a sense of how the virus has broke out and how lockdown policies among countries work against the spread of COVID-19.
+
+## Preperations
+```{r loading_packages, message=FALSE, warning=FALSE}
+#install.packages("tidyverse")
+library(tidyverse)
+
+```
+
+```{r define_theme, echo = FALSE}
+theme_covid <- function(){
+  theme_linedraw() +
+  theme(
+    plot.subtitle = element_text(size = 12),
+    plot.caption = element_text(color = "gray30"),
+    plot.margin = unit(c(5, 10, 5, 10), units = "mm"),
+    legend.title = element_text(face="bold"),
+    legend.text = element_text(),
+    legend.key.size = unit(.3,"cm"))
+  }
+```
+
+# Background 
+Coronavirus disease (COVID-19) was first identified as an epidemic in Wuhan region, China, in December 2019. It soon spreads across the country and became a global pandemic. 
+
+According to the the [World Health Organization](https://www.who.int/emergencies/diseases/novel-coronavirus-2019), COVID-19 can spread from person-to-person contact. More countries are announcing quarantine policy that include temporary lockdown of a region and self-isolation order against citizens. These measures aim to "[flatten the curve](https://www.livescience.com/coronavirus-flatten-the-curve.html)," which can delay outbreak peak, decompress peak burden on hospitals, and reduce overall cases and health impacts, according to the U.S. Centers for Disease Control and Prevention (CDC). 
+
+Governments around the world and international organizations have been collecting data to monitor the disease outbreak. Notably, the Johns Hopkins University Center for Systems Science and Engineering created a [publicly available data repository](https://github.com/CSSEGISandData/COVID-19) to consolidate COVID-19 data from various sources including the WHO, the CDC or Ministry of Health from multiple countries, and so on.
+
+This report visualizes the up-to-date COVID-19 situation using JHU's dataset on global confirmed, death, and recovered cases, to see the international pattern of the COVID-19 disease outbreak. 
+
+
+# Data & Preprocessing
+First, we retrieve each dataset from JHU's repository and save it. URL to the repository is used to ensure the data is up-to-date every time we run the analysis. 
+```{r loading_data, message=FALSE}
+# retrieve each dataset from JHU
+url_confirmed="https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/
+csse_covid_19_time_series/time_series_covid19_confirmed_global.csv"
+url_deaths="https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/
+csse_covid_19_time_series/time_series_covid19_deaths_global.csv"
+url_recovered="https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/
+csse_covid_19_time_series/time_series_covid19_recovered_global.csv"
+# read in the csv files
+raw.confirmed <- read_csv(url(url_confirmed))
+raw.deaths <- read_csv(url(url_deaths))
+raw.recovered <- read_csv(url(url_recovered))
+# save in local computer
+write.csv(raw.confirmed, file = ".\\data\\covid-19-confirmed-global.csv", row.names = FALSE)
+write.csv(raw.deaths, file = ".\\data\\covid-19-deaths-global.csv", row.names = FALSE)
+write.csv(raw.recovered, file = ".\\data\\covid-19-recovered-global.csv", row.names = FALSE)
+```
+
+
+Since the original dataset is in wide format, we need to reshape it into long format for plotting and performing analysis in R. To simplify the process, we use *lappy* function to reshape the three datasets in a time.
+
+```{r reshaping_dataset, message = FALSE}
+# combine three dataset into a list since lapply passes through a list
+raw <- list(raw.confirmed,raw.deaths,raw.recovered)
+reshaped <- lapply(raw, function(x){
+  cleaned <- x %>% 
+    pivot_longer(cols = -c('Province/State','Country/Region','Lat','Long'), 
+                 names_to = "date", 
+                 values_to = "cases", 
+                 values_drop_na = TRUE) %>% 
+    mutate(date = as.Date(date,"%m/%d/%y")) %>%  
+    group_by(`Country/Region`, date) %>% 
+    summarize(cum_cases = sum(cases)) 
+  cleaned
+  }
+)
+# unlist the results of lapply back to three data frames
+global_confirmed <- as.data.frame(unlist(reshaped[1],recursive = FALSE))
+global_deaths <- as.data.frame(unlist(reshaped[2], recursive = FALSE))
+global_recovered <- as.data.frame(unlist(reshaped[3], recursive = FALSE))
+
+```
+
+```{r country_count, echo=FALSE}
+# count how many countries are in the dataset
+country <- data.frame(unique(global_confirmed$Country.Region))
+
+```
+
+
+The loaded data contains **`r count(country)`** countries in the world from **`r min(global_confirmed$date)`** to **`r max(global_confirmed$date)`**.
+
+
+# Analysis (as of `r max(global_confirmed$date)`)
+
+## Worldwide trend
+Below plot presents the cumulative confirmed cases worldwide overtime. We can see confirmed cases started to surge after mid-March. 
+```{r plot_global_confirmed}
+# annotation
+who_events <- tribble(
+  ~ date, ~ event,
+  "2020-01-30", "Global health emergency\ndeclared (Jan. 30)",
+  "2020-03-11", "Pandemic declared \n(Mar. 11)") %>%
+  mutate(date = as.Date(date))
+
+# plotting
+plt_global_confirmed <- global_confirmed %>% 
+  group_by(date) %>% 
+  summarise(cum_cases=sum(cum_cases)) %>% 
+  ggplot(aes(x = date, y = cum_cases))+
+  geom_line()+
+  scale_y_continuous(labels = scales::unit_format(unit = "m", scale = 1e-6))+
+  labs(x = "", 
+       y = "Cumulative Cases (Million)",
+       caption = "Data source: JHU CSSE.")+
+  geom_vline(aes(xintercept=date), who_events,linetype = "dashed")+
+  geom_text(aes(x = date+1,label = event), who_events, y = 3000000, hjust = 0)+
+  theme_bw()
+plt_global_confirmed
+
+```
+
+But how bad is the situation overall? Below compared the cumulative numbers of different types of COVID-19 cases. The graph shows that the recovered cases grow far slower than infected cased, resulting in growing number of active cases. This implies the necessity of social distancing measure, such as covering face and avoiding non essential gathering. 
+```{r all_cases, message=FALSE}
+# calculate cumulative cases for each dataset overtime
+all_cases_overtime <- lapply(list(global_confirmed, global_recovered, global_deaths), function(x){
+  cumulated <- x %>% 
+    group_by(date) %>% 
+    summarize(cum_cases = sum(cum_cases))
+  cumulated
+  }
+)
+
+# make a line plot
+plt_all_cases <- ggplot(
+  bind_rows(all_cases_overtime, .id="df"), 
+  aes(x = date, y = cum_cases, color = df)) + 
+  geom_line() + 
+  scale_y_continuous(labels = scales::unit_format(unit = "m", scale = 1e-6))+
+  scale_color_discrete(
+    name = "Type of case", 
+    breaks = c("1", "2", "3"), 
+    labels = c("Confirmed", "Recovered", "Death"))+
+  labs(x = "", 
+       y = "Cumulative Cases (Million)",
+       caption = "Data source: JHU CSSE.")+
+  theme_bw()
+plt_all_cases
+```
+
+## Confirmed cases: China compared to the rest of the world
+Now we want to compare confirmed COVID-19 cases in China to the rest of the world in the first three months since China became the origin of COVID-19. The annotation on the graph helps us interpret the trend. Firstly, WHO declared COVID-19 as a global health emergency when over 8,000 cases are confirmed in China. Secondly, [change in China's reporting method](https://www.cnn.com/2020/02/13/asia/china-numbers-novel-coronavirus-intl/index.html) explains the sudden surge of cases in mid-February. Lastly, pandemic was declared when the rest of the world had about 45,000 cases. 
+```{r china}
+# subsetting & filtering data
+china_vs_world <- global_confirmed %>%
+  filter(date <= "2020-03-15") %>% 
+  mutate(is_china = if_else(Country.Region == "China","China","Not China")) %>%
+  group_by(is_china, date) %>%
+  summarize(cum_cases = sum(cum_cases))
+
+# annotation
+who_events <- data.frame(
+  "date" = c("2020-01-30","2020-03-11","2020-02-13"), 
+  "event" = c("Global health\nemergency declared","Pandemic\ndeclared","China reporting change"), 
+  "height" = c(75000,44000,60000)) %>% 
+  mutate(date = as.Date(date))
+
+# plot
+plt_china_vs_world <- china_vs_world %>%
+  ggplot()+
+  geom_line(
+    aes(x=date, y=cum_cases, group=is_china, color=is_china))+
+  scale_y_continuous(
+    labels = scales::unit_format(unit = "k", scale = 1e-3))+
+  labs(
+    x = "",
+    y = "Cumulative Confirmed Cases",
+    caption = "Data source: JHU CSSE.")+
+  geom_vline(
+    aes(xintercept=date), 
+    who_events,
+    linetype = "dashed")+
+  geom_text(
+    aes(x = date + 1, y = height, label = event), 
+    who_events, 
+    hjust = 0, 
+    size = 3)+
+  theme_bw()+
+  theme(legend.title = element_blank())
+plt_china_vs_world
+```
+
+## Confirmed cases: US compared to the rest of the world
+How has the situation been in the US compared to the world? Below we plot the trend after March 3rd when over 100 cases are confirmed in the US. The big picture is that the US as a single country has as many cases as half of the rest of the world three months after the COVID-19 outbreak. 
+```{r us}
+# Confirmed cases: US compared to the rest of the world
+us_vs_world <- global_confirmed %>%
+  filter(date >= "2020-03-03") %>% 
+  mutate(is_us = if_else(Country.Region == "US","US","The rest of the world")) %>%
+  group_by(is_us,date) %>%
+  summarize(cum_cases = sum(cum_cases))
+
+# annotation
+us_events <- data.frame(
+  "date" = c("2020-03-13","2020-03-26","2020-04-20"), 
+  "event" = c("National\nemergency\ndeclared","Reached most cases\nin the world","States proposed\n plans to reopen"), 
+  "height" = c(2000000,2000000,650000)
+  ) %>% 
+  mutate(date = as.Date(date))
+
+# plotting
+plt_us_vs_world <- us_vs_world %>%
+  ggplot()+
+  geom_line(aes(x = date, y = cum_cases, group = is_us, color = is_us))+
+  labs(x = "",
+       y = "Cumulative Confirmed Cases",
+       caption = "Data source: JHU CSSE.")+
+  scale_y_continuous(labels = scales::unit_format(unit = "k", scale = 1e-3))+
+  geom_vline(
+    aes(xintercept=date), 
+    us_events,
+    linetype = "dashed")+
+  geom_text(
+    aes(x = date + 1, y = height, label = event), 
+    us_events, 
+    hjust = 0, 
+    size = 3)+
+  theme_bw()+
+  theme(legend.title = element_blank())
+plt_us_vs_world
+
+```
+
+## Trend (logarithmic scale) in the US and the rest of the world as of early May
+Below we added a trend line to see how fast COVID-19 spreads in the US and the rest of the world. As the graph shows, both the US and the rest of the world are growing faster than linear prediction at exponential rate (blue dashed line).
+```{r trend, message=FALSE}
+trend_us_v_world <- us_vs_world %>%
+  ggplot(aes(x = date, y = cum_cases))+
+  geom_line()+
+  geom_smooth(method = "lm", se = FALSE, linetype = "dashed")+
+  facet_wrap(~is_us, scales = "free")+
+  scale_y_log10()+
+  scale_y_continuous(labels = scales::unit_format(unit = "k", scale = 1e-3))+
+  labs(x = "",
+       y = "(Log) Cumulative Cases",
+       caption = "Method: Linear prediction\nData source: JHU CSSE.")+
+  theme_bw()
+trend_us_v_world
+```
+
+## Top Infected Countries as of `r max(global_confirmed$date)`
+As the data shows, US has the most confirmed cases to date, which is 1.2 million people. Western European countries including Spain, Italy, UK, France, and Germany are among the most infected regions as well. Most of them are developed economies. 
+```{r top_infected, message=FALSE}
+global_confirmed %>% 
+  group_by(Country.Region) %>%
+  summarise(total_cases = max(cum_cases)) %>%
+  arrange(desc(total_cases)) %>%
+  head(n=10) %>% 
+  knitr::kable(
+    col.names = c("Region","Total confirmed cases"), 
+    align = "rr", 
+    caption = "Top infected regions")
+```
+
+## Death rate
+Next, we want to find out who are the most vulnerable countries to this disease. Having the highest number of infected cases does not mean high fatality from the disease. According to data, the average infection fatality rate is 4%. The following table summarize 10 countries who had the highest COVID-19 infection fatality rate. The table shows the highest death rate occurred in the Nicaragua (31%), followed by MS Zaandam's 22%. Besides developing countries, developed European economies also have over 10% infection death rate. 
+```{r}
+global_deaths %>%
+  group_by(Country.Region) %>%
+  summarize(death_toll = max(cum_cases))%>%
+  arrange(desc(death_toll)) %>%
+  head(n=10) %>% 
+  knitr::kable(col.names = c("Region","Death Toll"), 
+               align = "rr",
+               caption = "Top fatality countries")
+
+confirmed_death <- merge(global_confirmed, global_deaths, 
+                         by = c("Country.Region", "date"), 
+                         suffixes = c(".confirmed",".deaths"))
+
+death <- confirmed_death %>%
+  group_by(Country.Region) %>%
+  summarize(
+    total_confirmed = max(cum_cases.confirmed),
+    total_death = max(cum_cases.deaths),
+    rate = total_death / total_confirmed)
+
+summary(death$rate)
+
+death %>% 
+  arrange(desc(rate)) %>%
+  head(n=10) %>% 
+  knitr::kable(
+    col.names = c("Region", "Total confirmed cases","Death toll", "Infection fatality rate"), 
+    align = "rrrr", 
+    caption = "Top infection fatality rate")
+```
+
+
+## Recovery rate
+Lastly, we want to look at the infection recovery rate to see how countries have been doing after hit by the disease outbreak. According to data, about 43.8% of infected cases have recovered from the disease on average. Table below presents countries that have mostly recovered from the outbreak, indicating low density of active cases. It also showed in the table that the situation in China has been improved with about 94% of infection recovery rate. 
+```{r recovery, message=FALSE}
+confirmed_recovered <- merge(global_confirmed, global_recovered, 
+                         by = c("Country.Region", "date"), 
+                         suffixes = c(".confirmed",".recovered"))
+
+recovered <- confirmed_recovered %>%
+  group_by(Country.Region) %>%
+  summarize(
+    total_confirmed = max(cum_cases.confirmed),
+    total_recovered = max(cum_cases.recovered),
+    rate = total_recovered / total_confirmed)
+
+summary(recovered$rate)
+
+recovered %>%
+  group_by(Country.Region) %>%
+  arrange(desc(rate)) %>%
+  head(n=10) %>% 
+  knitr::kable(
+    col.names = c("Region","Total confirmed cases", "Total recovered cases", "Infection recovery rate"), 
+    align = "rrrr", 
+    caption = "Top recovered countries")
+```
+
+
+# Conclusions
+In sum, the situation of COVID-19 outbreak is still tough globally as of `r max(global_confirmed$date)`. Number of infected cases is growing faster than exponential rate. The average infection death rate of COVID-19 globally is higher than other historical pandemic disease. Since the average recovery rate in most countries has remained low, social distancing measures, such as wearing facial covers and keep safe distance with people, are necessary to slow down the infection and prevent another outbreak.
