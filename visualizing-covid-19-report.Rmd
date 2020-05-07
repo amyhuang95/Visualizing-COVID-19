@@ -1,24 +1,5 @@
 ---
 title: "Visualizing COVID-19 Global Pandemic"
-knit: (function(input_file, encoding) {
-  out_dir <- 'docs';
-  rmarkdown::render(input_file,
- encoding=encoding,
- output_file=file.path(dirname(input_file), out_dir, 'index.html'))})
-author: "Amy Huang"
-date: "May 7, 2020"
-output:
-  html_document:
-  css: styles.css
-  df_print: kable
-  highlight: monochrome
-  number_sections: yes
-  code_folding: hide
-  theme: cosmo
-  toc: yes
-  toc_depth: 4
-  toc_float: no
-subtitle: ''
 ---
 
 <style>

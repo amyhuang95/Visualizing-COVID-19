@@ -1,0 +1,10 @@
+name: "viz-covid-19"
+output_dir: "docs"
+navbar:
+  title: "Visualizing COVID-19"
+  left:
+  - text: "Visualizing COVID-19 Global Pandemic"
+   href: visualizing-covid-19-report.html
+output:
+  html_document:
+ theme: cosmo
