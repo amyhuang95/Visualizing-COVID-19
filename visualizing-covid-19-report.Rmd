@@ -1,13 +1,17 @@
 ---
 title: "Visualizing COVID-19 Global Pandemic"
+knit: (function(input_file, encoding) {
+  out_dir <- 'docs';
+  rmarkdown::render(input_file,
+ encoding=encoding,
+ output_file=file.path(dirname(input_file), out_dir, 'index.html'))})
 author: "Amy Huang"
 date: "May 7, 2020"
 output:
-  html_document: default
+  html_document:
   css: styles.css
   df_print: kable
   highlight: monochrome
-  html_document: null
   number_sections: yes
   code_folding: hide
   theme: cosmo
@@ -47,24 +51,11 @@ knitr::opts_chunk$set(echo = TRUE)
 
 This report aims to provide a screenshot of the global trend of COVID-19 pandemic and help readers get a sense of how the virus has broke out and how lockdown policies among countries work against the spread of COVID-19.
 
-## Preperations
+# Preperations
 ```{r loading_packages, message=FALSE, warning=FALSE}
 #install.packages("tidyverse")
 library(tidyverse)
 
-```
-
-```{r define_theme, echo = FALSE}
-theme_covid <- function(){
-  theme_linedraw() +
-  theme(
-    plot.subtitle = element_text(size = 12),
-    plot.caption = element_text(color = "gray30"),
-    plot.margin = unit(c(5, 10, 5, 10), units = "mm"),
-    legend.title = element_text(face="bold"),
-    legend.text = element_text(),
-    legend.key.size = unit(.3,"cm"))
-  }
 ```
 
 # Background 
