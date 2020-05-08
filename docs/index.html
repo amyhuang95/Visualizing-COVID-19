@@ -737,7 +737,7 @@ death &lt;- confirmed_death %&gt;%
 
 summary(death$rate)</code></pre>
 <pre><code>##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-## 0.00000 0.01015 0.03037 0.04164 0.05817 0.31250</code></pre>
+## 0.00000 0.01015 0.03037 0.04162 0.05817 0.31250</code></pre>
 <pre class="r"><code>death %&gt;% 
   arrange(desc(rate)) %&gt;%
   head(n=10) %&gt;% 
@@ -835,7 +835,7 @@ recovered &lt;- confirmed_recovered %&gt;%
 
 summary(recovered$rate)</code></pre>
 <pre><code>##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-##  0.0000  0.2108  0.4136  0.4450  0.6928  1.0000</code></pre>
+##  0.0000  0.2108  0.4213  0.4455  0.6928  1.0000</code></pre>
 <pre class="r"><code>recovered %&gt;%
   group_by(Country.Region) %&gt;%
   arrange(desc(rate)) %&gt;%
