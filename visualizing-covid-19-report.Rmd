@@ -43,6 +43,7 @@ This report visualizes the up-to-date COVID-19 situation using JHU's dataset on 
 
 # Data & preprocessing
 First, we retrieve each dataset from JHU's repository and save it. URL to the repository is used to ensure the data is up-to-date every time we run the analysis. 
+
 ```{r loading_data, message=FALSE}
 # retrieve each dataset from JHU
 url_confirmed="https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/
