@@ -212,16 +212,7 @@ global_confirmed %>%
   group_by(Country.Region) %>%
   summarise(total_cases = max(cum_cases)) %>%
   arrange(desc(total_cases)) %>%
-  head(n=10) %>% 
-  knitr::kable(
-    col.names = c("Region","Total confirmed cases"), 
-    align = "rr", 
-    caption = "Top infected regions") %>% 
-  kable_styling(
-    bootstrap_options = "striped", 
-    full_width = F, 
-    position = "center"
-  )
+  head(n=10)
 
 
 ### Table 2: Top impacted countries
@@ -229,15 +220,7 @@ global_deaths %>%
   group_by(Country.Region) %>%
   summarize(death_toll = max(cum_cases))%>%
   arrange(desc(death_toll)) %>%
-  head(n=10) %>% 
-  knitr::kable(col.names = c("Region","Death Toll"), 
-               align = "rr",
-               caption = "Top fatality countries") %>% 
-  kable_styling(
-    bootstrap_options = "striped", 
-    full_width = F, 
-    position = "center"
-  )
+  head(n=10)
 
 confirmed_death <- merge(global_confirmed, global_deaths, 
                          by = c("Country.Region", "date"), 
@@ -254,16 +237,7 @@ summary(death$rate)
 
 death %>% 
   arrange(desc(rate)) %>%
-  head(n=10) %>% 
-  knitr::kable(
-    col.names = c("Region", "Total confirmed cases","Death toll", "Infection fatality rate"), 
-    align = "rrrr", 
-    caption = "Top infection fatality rate") %>% 
-  kable_styling(
-    bootstrap_options = "striped", 
-    full_width = F, 
-    position = "center"
-  )
+  head(n=10)
 
 ### Table 3: Top recovered countries
 confirmed_recovered <- merge(global_confirmed, global_recovered, 
@@ -282,21 +256,4 @@ summary(recovered$rate)
 recovered %>%
   group_by(Country.Region) %>%
   arrange(desc(rate)) %>%
-  head(n=10) %>% 
-  knitr::kable(
-    col.names = c("Region","Total confirmed cases", "Total recovered cases", "Infection recovery rate"), 
-    align = "rrrr", 
-    caption = "Top recovered countries") %>% 
-  kable_styling(
-    bootstrap_options = "striped", 
-    full_width = F, 
-    position = "center"
-  )
-
-
-
-
-
-
-
-
+  head(n=10)
